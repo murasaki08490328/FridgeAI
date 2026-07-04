@@ -1,0 +1,16 @@
+{
+  "name": "Frigo Chef",
+  "short_name": "Frigo Chef",
+  "description": "Snap your fridge, get healthy recipes.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#10b981",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
