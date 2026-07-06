@@ -23,7 +23,7 @@ export default function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50">
+    <nav className="fixed bottom-0 left-0 w-full bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50">
       <div className="flex justify-around items-center h-16 pb-safe">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
@@ -33,7 +33,7 @@ export default function BottomNav() {
               key={item.href}
               href={item.href}
               className={`relative flex flex-col items-center justify-center w-full h-full space-y-1 ${
-                isActive ? 'text-[#10b981]' : 'text-gray-500 hover:text-gray-900'
+                isActive ? 'text-[#10b981]' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
               }`}
             >
               <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />

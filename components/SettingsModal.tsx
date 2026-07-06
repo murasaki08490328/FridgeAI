@@ -40,16 +40,16 @@ export default function SettingsModal() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<button className="p-2 rounded-full hover:bg-gray-100 transition-colors" />}>
-        <Settings className="text-gray-600" size={24} />
+      <DialogTrigger render={<button className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors" />}>
+        <Settings className="text-gray-600 dark:text-gray-400" size={24} />
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] rounded-3xl">
+      <DialogContent className="sm:max-w-[425px] rounded-3xl dark:bg-slate-900 dark:border-slate-800">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-center">Préférences Culinaires</DialogTitle>
+          <DialogTitle className="text-2xl font-bold text-center dark:text-gray-100">Préférences Culinaires</DialogTitle>
         </DialogHeader>
         <div className="grid gap-6 py-4">
           <div className="space-y-3">
-            <Label htmlFor="goal" className="text-base font-bold text-gray-700">Objectif Nutritionnel</Label>
+            <Label htmlFor="goal" className="text-base font-bold text-gray-700 dark:text-gray-300">Objectif Nutritionnel</Label>
             <Select 
               value={userProfile.goal} 
               onValueChange={(value) => updateUserProfile({ goal: value ?? "" })}
@@ -66,7 +66,7 @@ export default function SettingsModal() {
           </div>
 
           <div className="space-y-3">
-            <Label htmlFor="level" className="text-base font-bold text-gray-700">Niveau en cuisine</Label>
+            <Label htmlFor="level" className="text-base font-bold text-gray-700 dark:text-gray-300">Niveau en cuisine</Label>
             <Select 
               value={userProfile.cookingLevel} 
               onValueChange={(value) => updateUserProfile({ cookingLevel: value ?? "" })}
@@ -83,7 +83,7 @@ export default function SettingsModal() {
           </div>
 
           <div className="space-y-3">
-            <Label className="text-base font-bold text-gray-700">Équipements disponibles</Label>
+            <Label className="text-base font-bold text-gray-700 dark:text-gray-300">Équipements disponibles</Label>
             <div className="grid grid-cols-2 gap-3">
               {EQUIPMENTS.map((eq) => (
                 <div key={eq} className="flex items-center space-x-2">

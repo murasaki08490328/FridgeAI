@@ -22,6 +22,7 @@ interface AppState {
   addToInventory: (items: InventoryItem[]) => void;
   removeFromInventory: (itemsToRemove: string[]) => void;
   addSavings: (amount: number) => void;
+  resetSavings: () => void;
   addToShoppingList: (item: string) => void;
   removeFromShoppingList: (item: string) => void;
   clearShoppingList: () => void;
@@ -65,6 +66,8 @@ export const useAppStore = create<AppState>()(
         }),
       addSavings: (amount) =>
         set((state) => ({ savings: state.savings + amount })),
+      resetSavings: () =>
+        set({ savings: 0 }),
       addToShoppingList: (item) =>
         set((state) => ({
           shoppingList: state.shoppingList.includes(item)

@@ -2,19 +2,22 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, Image as ImageIcon, ChefHat, PiggyBank } from "lucide-react";
+import { Camera, Image as ImageIcon, ChefHat, PiggyBank, RotateCcw } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import SettingsModal from "@/components/SettingsModal";
+import { LoadingOverlay } from "@/components/LoadingOverlay";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function Home() {
-  const [loading, setLoading] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState("");
-  const [progress, setProgress] = useState(0);
+  const [showLoading, setShowLoading] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analyzedData, setAnalyzedData] = useState<any>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const savings = useAppStore(state => state.savings);
+  const resetSavings = useAppStore(state => state.resetSavings);
   const addToInventory = useAppStore(state => state.addToInventory);
   const setIngredientsDetectes = useAppStore(state => state.setIngredientsDetectes);
   const [mounted, setMounted] = useState(false);
@@ -53,25 +56,10 @@ export default function Home() {
         
         const base64Image = canvas.toDataURL("image/jpeg", 0.8);
         setPreviewImage(base64Image);
-        setLoading(true);
+        setShowLoading(true);
+        setIsAnalyzing(true);
+        setAnalyzedData(null);
         
-        const messages = [
-          "Analyse de l'image en cours...",
-          "Identification des ingrédients...",
-          "Analyse des protéines disponibles...",
-          "Équilibrage nutritionnel en cours...",
-          "Génération de la recette santé..."
-        ];
-        
-        let messageIndex = 0;
-        setLoadingMessage(messages[0]);
-        setProgress(20);
-        const interval = setInterval(() => {
-          messageIndex = (messageIndex + 1) % messages.length;
-          setLoadingMessage(messages[messageIndex]);
-          setProgress(Math.min(90, (messageIndex + 1) * 20));
-        }, 2000);
-
         try {
           const response = await fetch("/api/analyze", {
             method: "POST",
@@ -83,37 +71,19 @@ export default function Home() {
           
           if (!data.inventaire || data.inventaire.length === 0) {
              alert("L'IA n'a pas pu identifier d'ingrédients exploitables ou l'image est trop floue. Veuillez réessayer.");
-             setLoading(false);
+             setShowLoading(false);
+             setIsAnalyzing(false);
              setPreviewImage(null);
           } else {
-             setProgress(100);
-             setLoadingMessage("Recette trouvée !");
-             
-             // Ajouter les ingrédients au frigo virtuel
-             const newItems = data.inventaire.map((i: any) => ({
-               id: crypto.randomUUID(),
-               nom: i.nom,
-               joursConservationEstimes: i.joursConservationEstimes,
-               alertePeremptionProche: i.alertePeremptionProche,
-               dateScan: Date.now()
-             }));
-             addToInventory(newItems);
-             
-             // Sauvegarder les ingrédients pour la régénération
-             setIngredientsDetectes(newItems.map((i: any) => i.nom));
-
-             sessionStorage.setItem("recipeData", JSON.stringify(data));
-             setTimeout(() => {
-               router.push("/recipe");
-             }, 500);
+             setAnalyzedData(data);
+             setIsAnalyzing(false);
           }
         } catch (error) {
           console.error(error);
           alert("Une erreur est survenue lors de l'analyse.");
-          setLoading(false);
+          setShowLoading(false);
+          setIsAnalyzing(false);
           setPreviewImage(null);
-        } finally {
-          clearInterval(interval);
         }
       };
       img.src = event.target?.result as string;
@@ -121,32 +91,66 @@ export default function Home() {
     reader.readAsDataURL(file);
   };
 
+  const handleLoadingComplete = () => {
+    if (analyzedData) {
+      const newItems = analyzedData.inventaire.map((i: any) => ({
+        id: crypto.randomUUID(),
+        nom: i.nom,
+        joursConservationEstimes: i.joursConservationEstimes,
+        alertePeremptionProche: i.alertePeremptionProche,
+        dateScan: Date.now()
+      }));
+      addToInventory(newItems);
+      setIngredientsDetectes(newItems.map((i: any) => i.nom));
+
+      sessionStorage.setItem("recipeData", JSON.stringify(analyzedData));
+      router.push("/recipe");
+    }
+  };
+
   return (
-    <main className="h-[100dvh] w-full overflow-hidden flex flex-col relative bg-[#f9fafb]">
+    <main className="h-[100dvh] w-full overflow-hidden flex flex-col relative bg-[#f9fafb] dark:bg-slate-950 transition-colors">
       {/* Header */}
       <header className="flex justify-between items-center p-6 shrink-0">
         <div className="flex items-center gap-2 text-[#10b981]">
           <ChefHat size={32} />
-          <h1 className="text-2xl font-bold tracking-tight text-[#111827]">Frigo Chef</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-[#111827] dark:text-gray-100">Frigo Chef</h1>
         </div>
-        <SettingsModal />
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <SettingsModal />
+        </div>
       </header>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col items-center justify-center p-6 gap-8 pb-12 overflow-y-auto">
-        {!loading && !previewImage ? (
+        {!showLoading && !previewImage ? (
           <>
             <div className="text-center space-y-3 max-w-sm">
               {mounted && savings > 0 && (
-                <div className="flex items-center justify-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-2xl mb-6 shadow-sm border border-emerald-100 mx-auto w-max">
-                  <PiggyBank size={24} className="text-emerald-500" />
-                  <span className="font-bold text-lg">{savings.toFixed(2)} € <span className="font-medium text-sm">économisés</span></span>
+                <div className="flex items-center justify-center gap-3 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 px-4 py-2 rounded-2xl mb-6 shadow-sm border border-emerald-100 dark:border-emerald-900 mx-auto w-max">
+                  <div className="flex items-center gap-2">
+                    <PiggyBank size={24} className="text-emerald-500" />
+                    <span className="font-bold text-lg">{savings.toFixed(2)} € <span className="font-medium text-sm">économisés</span></span>
+                  </div>
+                  <div className="w-[1px] h-6 bg-emerald-200 dark:bg-emerald-800"></div>
+                  <button 
+                    onClick={() => {
+                      if (window.confirm("Voulez-vous vraiment réinitialiser vos économies ?")) {
+                        resetSavings();
+                      }
+                    }}
+                    className="p-1.5 text-emerald-600 hover:bg-emerald-100 dark:text-emerald-400 dark:hover:bg-emerald-900/50 rounded-full transition-colors active:scale-95"
+                    title="Réinitialiser les économies"
+                  >
+                    <RotateCcw size={18} />
+                  </button>
                 </div>
               )}
-              <h2 className="text-3xl font-extrabold text-[#111827]">
+              <h2 className="text-3xl font-extrabold text-[#111827] dark:text-gray-100">
                 Recette saine en 1 clic
               </h2>
-              <p className="text-gray-500 text-lg">
+              <p className="text-gray-500 dark:text-gray-400 text-lg">
                 Prenez en photo l&apos;intérieur de votre frigo et laissez l&apos;IA créer une recette équilibrée.
               </p>
             </div>
@@ -180,7 +184,7 @@ export default function Home() {
               
               <button 
                 onClick={() => galleryInputRef.current?.click()}
-                className="w-full flex items-center justify-center gap-3 bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 py-4 px-6 rounded-2xl text-lg font-semibold transition-all active:scale-95 shadow-sm"
+                className="w-full flex items-center justify-center gap-3 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700 py-4 px-6 rounded-2xl text-lg font-semibold transition-all active:scale-95 shadow-sm"
               >
                 <ImageIcon size={24} />
                 Choisir depuis la galerie
@@ -188,37 +192,11 @@ export default function Home() {
             </div>
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center w-full max-w-sm gap-8 relative">
-            <div className="relative w-full aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-gray-100 max-h-[50vh]">
-              {previewImage && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img 
-                  src={previewImage} 
-                  alt="Preview" 
-                  className="w-full h-full object-cover"
-                />
-              )}
-              
-              {/* Laser Scan Effect */}
-              <div className="absolute inset-0 z-10 overflow-hidden rounded-3xl pointer-events-none">
-                <div className="absolute left-0 w-full h-1 bg-emerald-400 shadow-[0_0_20px_10px_rgba(16,185,129,0.5)] animate-[scan_2s_ease-in-out_infinite]" />
-              </div>
-              
-              <div className="absolute inset-0 bg-black/30 z-0 pointer-events-none" />
-            </div>
-            
-            <div className="flex flex-col items-center gap-3 w-full shrink-0">
-              <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-[#10b981] rounded-full transition-all duration-1000 ease-in-out" 
-                  style={{ width: `${progress}%` }} 
-                />
-              </div>
-              <p className="text-lg font-medium text-center text-[#111827] animate-pulse">
-                {loadingMessage}
-              </p>
-            </div>
-          </div>
+          <LoadingOverlay 
+            isAnalyzing={isAnalyzing} 
+            onComplete={handleLoadingComplete} 
+            previewImage={previewImage} 
+          />
         )}
       </div>
     </main>
