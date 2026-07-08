@@ -5,7 +5,11 @@
   "description": "Snap your fridge, get healthy recipes.",
   "start_url": "/",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "tabbed", "standalone", "minimal-ui"],
+  "display_override": ["tabbed", "window-controls-overlay", "standalone", "minimal-ui"],
+  "tab_strip": {
+    "home_tab": "auto",
+    "new_tab_button": { "url": "/" }
+  },
   "background_color": "#f9fafb",
   "theme_color": "#10b981",
   "orientation": "portrait",
@@ -14,10 +18,17 @@
   "lang": "fr",
   "dir": "ltr",
   "prefer_related_applications": false,
-  "related_applications": [],
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=com.frigochef.app",
+      "id": "com.frigochef.app"
+    }
+  ],
   "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
   "scope_extensions": [
-    { "origin": "*.fridge-ai-afs1.vercel.app" }
+    { "origin": "*.fridge-ai-pczd.vercel.app" },
+    { "origin": "*.vercel.app" }
   ],
   "shortcuts": [
     {
@@ -88,19 +99,13 @@
   },
   "icons": [
     {
-      "src": "icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "icon-192x192.png",
+      "src": "/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icon-512x512.png",
+      "src": "/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
@@ -108,14 +113,14 @@
   ],
   "screenshots": [
     {
-      "src": "icon-512x512.png",
+      "src": "/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Frigo Chef Web App"
     },
     {
-      "src": "icon-512x512.png",
+      "src": "/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "form_factor": "narrow",

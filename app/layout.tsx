@@ -4,6 +4,7 @@ import "./globals.css";
 import BottomNav from "@/components/BottomNav";
 import FreshnessAlerter from "@/components/FreshnessAlerter";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -58,6 +59,19 @@ export default function RootLayout({
           </div>
           <BottomNav />
         </ThemeProvider>
+        <Script
+          id="register-sw"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js');
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );
