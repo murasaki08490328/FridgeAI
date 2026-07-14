@@ -8,6 +8,7 @@ const withPWA = withPWAInit({
 
 const nextConfig: NextConfig = {
   /* config options here */
+  allowedDevOrigins: ['192.168.11.153'],
 };
 
 export default withPWA(nextConfig);
