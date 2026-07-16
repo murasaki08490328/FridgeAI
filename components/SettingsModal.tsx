@@ -24,6 +24,7 @@ import { Settings } from "lucide-react";
 const GOALS = ["Prise de masse", "Sèche", "Maintien", "Équilibré"];
 const COOKING_LEVELS = ["Débutant", "Intermédiaire", "Expert"];
 const EQUIPMENTS = ["Plaques de cuisson", "Four", "Micro-ondes", "Mixeur", "Air Fryer", "Cuiseur vapeur"];
+const DIETARY_PREFERENCES = ["Omnivore", "Végétarien", "Vegan", "Sans Gluten", "Pescatarien"];
 
 export default function SettingsModal() {
   const [open, setOpen] = useState(false);
@@ -60,6 +61,23 @@ export default function SettingsModal() {
               <SelectContent className="rounded-xl">
                 {GOALS.map((goal) => (
                   <SelectItem key={goal} value={goal}>{goal}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-3">
+            <Label htmlFor="diet" className="text-base font-bold text-gray-700 dark:text-gray-300">Régime Alimentaire</Label>
+            <Select 
+              value={userProfile.dietaryPreference} 
+              onValueChange={(value) => updateUserProfile({ dietaryPreference: value ?? "" })}
+            >
+              <SelectTrigger id="diet" className="w-full rounded-xl">
+                <SelectValue placeholder="Sélectionnez un régime" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                {DIETARY_PREFERENCES.map((diet) => (
+                  <SelectItem key={diet} value={diet}>{diet}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

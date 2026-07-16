@@ -13,6 +13,7 @@ export interface UserProfile {
   goal: string;
   cookingLevel: string;
   equipment: string[];
+  dietaryPreference: string;
 }
 
 interface AppState {
@@ -47,6 +48,7 @@ export const useAppStore = create<AppState>()(
         goal: 'Équilibré',
         cookingLevel: 'Intermédiaire',
         equipment: ['Plaques de cuisson', 'Four', 'Micro-ondes'],
+        dietaryPreference: 'Omnivore',
       },
       rejectedRecipes: [],
       ingredientsDetectes: [],

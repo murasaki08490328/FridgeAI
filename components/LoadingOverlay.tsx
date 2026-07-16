@@ -24,10 +24,10 @@ const PHRASES = [
 interface LoadingOverlayProps {
   isAnalyzing: boolean;
   onComplete: () => void;
-  previewImage: string | null;
+  previewImages: string[];
 }
 
-export function LoadingOverlay({ isAnalyzing, onComplete, previewImage }: LoadingOverlayProps) {
+export function LoadingOverlay({ isAnalyzing, onComplete, previewImages }: LoadingOverlayProps) {
   const [progress, setProgress] = useState(0);
   const [phraseIndex, setPhraseIndex] = useState(0);
   const [isFading, setIsFading] = useState(false);
@@ -78,13 +78,17 @@ export function LoadingOverlay({ isAnalyzing, onComplete, previewImage }: Loadin
   return (
     <div className="flex flex-col items-center justify-center w-full max-w-sm gap-8 relative">
       <div className="relative w-full aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl border-4 border-white dark:border-slate-800 bg-gray-100 dark:bg-slate-900 max-h-[50vh]">
-        {previewImage ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img 
-            src={previewImage} 
-            alt="Preview" 
-            className="w-full h-full object-cover"
-          />
+        {previewImages.length > 0 ? (
+          <div className={`w-full h-full grid ${previewImages.length === 1 ? 'grid-cols-1' : 'grid-cols-2 grid-rows-2'} gap-1 bg-black`}>
+            {previewImages.slice(0, 4).map((img, idx) => (
+              <img 
+                key={idx}
+                src={img} 
+                alt={`Preview ${idx + 1}`} 
+                className="w-full h-full object-cover"
+              />
+            ))}
+          </div>
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-600">
             <ChefHat size={64} />

@@ -3,55 +3,47 @@ import { NextResponse } from "next/server";
 
 export const maxDuration = 60; // 60 seconds max duration
 
-const systemPrompt = `Tu es une IA experte en gestion de frigo, nutrition et économies.
-Analyse l'image du frigo. Tu dois répondre avec un objet JSON strict :
-{
- "inventaire": [
- { "nom": "Tomate", "joursConservationEstimes": 4, "alertePeremptionProche": false }
- ],
- "recette100PourcentRestes": {
- "titre": "Nom",
- "etapes": ["..."],
- "ingrediensUtilises": ["..."],
- "valeurEconomiseeEstimeeEnEuros": 12.50
- },
- "recettePremiumUnManquant": {
- "titre": "Nom",
- "etapes": ["..."],
- "ingrediensUtilises": ["..."],
- "ingredientManquant": "Mozzarella",
- "valeurEconomiseeEstimeeEnEuros": 14.00
- }
-}`;
-
 export async function POST(req: Request) {
   try {
     const ai = new GoogleGenAI({
       apiKey: process.env.GEMINI_API_KEY || "dummy_key",
     });
 
-    const { image } = await req.json();
-    if (!image) {
-      return NextResponse.json({ error: "No image provided" }, { status: 400 });
+    const { images, userProfile } = await req.json();
+
+    if (!images || !Array.isArray(images) || images.length === 0) {
+      return NextResponse.json({ error: "No images provided" }, { status: 400 });
     }
 
-    const base64Data = image.split(",")[1];
-    const mimeType = image.split(";")[0].split(":")[1] || "image/jpeg";
+    const systemPrompt = `Tu es un chef cuisinier expert. Analyse les images fournies.
+Liste les ingrédients détectés.
+Tu dois impérativement respecter le profil utilisateur :
+- Régime : ${userProfile?.dietaryPreference || 'Omnivore'}
+- Objectif : ${userProfile?.goal || 'Équilibré'}
+- Niveau : ${userProfile?.cookingLevel || 'Intermédiaire'}
+- Équipement : ${userProfile?.equipment?.join(', ') || 'Plaques de cuisson, Four, Micro-ondes'}
+
+Génère 2 à 3 recettes pour chaque catégorie (Economie et Premium).`;
+
+    const parts: any[] = [{ text: systemPrompt }];
+
+    for (const img of images) {
+      const base64Data = img.split(",")[1];
+      const mimeType = img.split(";")[0].split(":")[1] || "image/jpeg";
+      parts.push({
+        inlineData: {
+          data: base64Data,
+          mimeType: mimeType,
+        },
+      });
+    }
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: [
         {
           role: "user",
-          parts: [
-            { text: systemPrompt },
-            {
-              inlineData: {
-                data: base64Data,
-                mimeType: mimeType,
-              },
-            },
-          ],
+          parts: parts,
         },
       ],
       config: {
@@ -61,6 +53,7 @@ export async function POST(req: Request) {
           properties: {
             inventaire: {
               type: Type.ARRAY,
+              description: "Inventaire des ingrédients détectés",
               items: {
                 type: Type.OBJECT,
                 properties: {
@@ -71,29 +64,53 @@ export async function POST(req: Request) {
                 required: ["nom", "joursConservationEstimes", "alertePeremptionProche"],
               },
             },
-            recette100PourcentRestes: {
-              type: Type.OBJECT,
-              properties: {
-                titre: { type: Type.STRING },
-                etapes: { type: Type.ARRAY, items: { type: Type.STRING } },
-                ingrediensUtilises: { type: Type.ARRAY, items: { type: Type.STRING } },
-                valeurEconomiseeEstimeeEnEuros: { type: Type.NUMBER },
-              },
-              required: ["titre", "etapes", "ingrediensUtilises", "valeurEconomiseeEstimeeEnEuros"],
+            ingrediensDetectes: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING },
             },
-            recettePremiumUnManquant: {
-              type: Type.OBJECT,
-              properties: {
-                titre: { type: Type.STRING },
-                etapes: { type: Type.ARRAY, items: { type: Type.STRING } },
-                ingrediensUtilises: { type: Type.ARRAY, items: { type: Type.STRING } },
-                ingredientManquant: { type: Type.STRING },
-                valeurEconomiseeEstimeeEnEuros: { type: Type.NUMBER },
+            categorieEconomie: {
+              type: Type.ARRAY,
+              description: "2 à 3 recettes utilisant uniquement les ingrédients détectés",
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  titre: { type: Type.STRING },
+                  tempsPreparation: { type: Type.STRING },
+                  etapes: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  macrosEstimees: {
+                    type: Type.OBJECT,
+                    properties: { calories: { type: Type.STRING } },
+                    required: ["calories"],
+                  },
+                  ingrediensUtilises: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  valeurEconomiseeEstimeeEnEuros: { type: Type.NUMBER },
+                },
+                required: ["titre", "tempsPreparation", "etapes", "macrosEstimees", "ingrediensUtilises", "valeurEconomiseeEstimeeEnEuros"],
               },
-              required: ["titre", "etapes", "ingrediensUtilises", "ingredientManquant", "valeurEconomiseeEstimeeEnEuros"],
-            }
+            },
+            categoriePremium: {
+              type: Type.ARRAY,
+              description: "2 à 3 recettes premium nécessitant l'achat d'un seul ingrédient clé",
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  titre: { type: Type.STRING },
+                  tempsPreparation: { type: Type.STRING },
+                  etapes: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  macrosEstimees: {
+                    type: Type.OBJECT,
+                    properties: { calories: { type: Type.STRING } },
+                    required: ["calories"],
+                  },
+                  ingrediensUtilises: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  ingredientManquant: { type: Type.STRING },
+                  valeurEconomiseeEstimeeEnEuros: { type: Type.NUMBER },
+                },
+                required: ["titre", "tempsPreparation", "etapes", "macrosEstimees", "ingrediensUtilises", "ingredientManquant", "valeurEconomiseeEstimeeEnEuros"],
+              },
+            },
           },
-          required: ["inventaire", "recette100PourcentRestes", "recettePremiumUnManquant"],
+          required: ["inventaire", "ingrediensDetectes", "categorieEconomie", "categoriePremium"],
         },
       },
     });
